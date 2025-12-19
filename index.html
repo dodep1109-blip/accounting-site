@@ -410,30 +410,15 @@
             font-weight: 600;
             cursor: pointer;
             transition: all 0.3s;
+            text-decoration: none;
+            text-align: center;
+            display: block;
         }
 
         .form-submit:hover {
             background-color: var(--primary-dark);
             transform: translateY(-2px);
             box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-        }
-
-        .form-message {
-            margin-top: 1rem;
-            padding: 1rem;
-            border-radius: 8px;
-            text-align: center;
-            display: none;
-        }
-
-        .form-message.success {
-            background-color: #4caf50;
-            display: block;
-        }
-
-        .form-message.error {
-            background-color: #f44336;
-            display: block;
         }
 
         /* CONTACTS */
@@ -631,7 +616,7 @@
 <section class="contact-form" id="contact-form">
     <div class="form-container">
         <h2 class="section-title">Отправить сообщение</h2>
-        <form id="contact-form-element" method="POST">
+        <form id="contact-form-element">
             <div class="form-group">
                 <label for="name">Ваше имя:</label>
                 <input type="text" id="name" name="name" placeholder="Иван Петров" required>
@@ -652,8 +637,9 @@
                 <textarea id="message" name="message" placeholder="Расскажите о вашей задаче..." required></textarea>
             </div>
 
-            <button type="submit" class="form-submit">Отправить</button>
-            <div class="form-message" id="form-message"></div>
+            <a href="mailto:olgatiskina36@gmail.com?subject=Сообщение с сайта бухгалтерской конторы&body=Имя: [заполните]%0AEmail: [заполните]%0AТелефон: [заполните]%0A%0AСообщение:%0A[ваше сообщение]" class="form-submit" onclick="return sendEmail()">
+                Отправить письмо
+            </a>
         </form>
     </div>
 </section>
@@ -728,17 +714,18 @@
 
     function calculatePrice() {
         const service = serviceSelect.value;
-        if (!service) return;
+        if (!service) {
+            calcResult.textContent = '0 ₽';
+            return;
+        }
 
         let price = prices[service];
         const quantity = parseInt(quantityInput.value) || 1;
 
-        // Multiply by quantity if applicable
         if (service === 'buh' || service === 'salary') {
             price *= quantity;
         }
 
-        // Add extras
         const extras = document.querySelectorAll('#checkbox-group input[type="checkbox"]:checked');
         extras.forEach(extra => {
             price += parseInt(extra.value);
@@ -755,54 +742,24 @@
         checkbox.addEventListener('change', calculatePrice);
     });
 
-    // CONTACT FORM
-    const contactFormElement = document.getElementById('contact-form-element');
-    const formMessage = document.getElementById('form-message');
-
-    contactFormElement.addEventListener('submit', async (e) => {
-        e.preventDefault();
-
+    // CONTACT FORM - mailto
+    function sendEmail() {
         const name = document.getElementById('name').value;
         const email = document.getElementById('email').value;
         const phone = document.getElementById('phone').value;
         const message = document.getElementById('message').value;
 
-        // Используем Formspree для отправки
-        // Замени YOUR_FORM_ID на реальный ID с formspree.io
-        const formspreeUrl = 'https://formspree.io/api/form/mojaxpod';
-        try {
-            const response = await fetch(formspreeUrl, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    name: name,
-                    email: email,
-                    phone: phone,
-                    message: message,
-                    _subject: 'Новое сообщение с сайта'
-                })
-            });
+        const mailtoLink = `mailto:olgatiskina36.com?subject=Новое сообщение с сайта&body=Имя: ${encodeURIComponent(name)}%0AEmail: ${encodeURIComponent(email)}%0AТелефон: ${encodeURIComponent(phone)}%0A%0AСообщение:%0A${encodeURIComponent(message)}`;
 
-            if (response.ok) {
-                formMessage.textContent = '✓ Сообщение успешно отправлено! Мы свяжемся с вами скоро.';
-                formMessage.className = 'form-message success';
-                contactFormElement.reset();
-            } else {
-                throw new Error('Ошибка отправки');
-            }
-        } catch (error) {
-            formMessage.textContent = '✗ Ошибка при отправке. Попробуйте позже или свяжитесь напрямую.';
-            formMessage.className = 'form-message error';
-        }
+        window.location.href = mailtoLink;
+        
+        // Очистить форму
+        document.getElementById('contact-form-element').reset();
+        
+        return false;
+    }
 
-        setTimeout(() => {
-            formMessage.style.display = 'none';
-        }, 5000);
-    });
-
-    // SMOOTH SCROLL FIX
+    // SMOOTH SCROLL
     document.querySelectorAll('a[href^="#"]').forEach(anchor => {
         anchor.addEventListener('click', function (e) {
             const href = this.getAttribute('href');
