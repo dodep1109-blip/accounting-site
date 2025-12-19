@@ -421,6 +421,24 @@
             box-shadow: 0 4px 12px rgba(0,0,0,0.2);
         }
 
+        .form-message {
+            margin-top: 1rem;
+            padding: 1rem;
+            border-radius: 8px;
+            text-align: center;
+            display: none;
+        }
+
+        .form-message.success {
+            background-color: #4caf50;
+            display: block;
+        }
+
+        .form-message.error {
+            background-color: #f44336;
+            display: block;
+        }
+
         /* CONTACTS */
         .contacts {
             background-color: var(--bg-light);
@@ -616,7 +634,7 @@
 <section class="contact-form" id="contact-form">
     <div class="form-container">
         <h2 class="section-title">Отправить сообщение</h2>
-        <form id="contact-form-element">
+        <form id="contact-form-element" onsubmit="return sendTelegram(event)">
             <div class="form-group">
                 <label for="name">Ваше имя:</label>
                 <input type="text" id="name" name="name" placeholder="Иван Петров" required>
@@ -637,9 +655,8 @@
                 <textarea id="message" name="message" placeholder="Расскажите о вашей задаче..." required></textarea>
             </div>
 
-            <a href="mailto:olgatiskina36@gmail.com?subject=Сообщение с сайта бухгалтерской конторы&body=Имя: [заполните]%0AEmail: [заполните]%0AТелефон: [заполните]%0A%0AСообщение:%0A[ваше сообщение]" class="form-submit" onclick="return sendEmail()">
-                Отправить письмо
-            </a>
+            <button type="submit" class="form-submit">Отправить</button>
+            <div class="form-message" id="form-message"></div>
         </form>
     </div>
 </section>
@@ -742,20 +759,65 @@
         checkbox.addEventListener('change', calculatePrice);
     });
 
-    // CONTACT FORM - mailto
-    function sendEmail() {
+    // TELEGRAM FORM
+    async function sendTelegram(event) {
+        event.preventDefault();
+
         const name = document.getElementById('name').value;
         const email = document.getElementById('email').value;
         const phone = document.getElementById('phone').value;
         const message = document.getElementById('message').value;
+        const formMessage = document.getElementById('form-message');
 
-        const mailtoLink = `mailto:olgatiskina36@gmail.com?subject=Новое сообщение с сайта&body=Имя: ${encodeURIComponent(name)}%0AEmail: ${encodeURIComponent(email)}%0AТелефон: ${encodeURIComponent(phone)}%0A%0AСообщение:%0A${encodeURIComponent(message)}`;
+        // Telegram Bot параметры
+        const BOT_TOKEN = '8517207508:AAHHGmHhAmX7eWWBS52kWQk8qOjKpPyHIqc';
+        const CHAT_ID = '5955896816';
 
-        window.location.href = mailtoLink;
-        
-        // Очистить форму
-        document.getElementById('contact-form-element').reset();
-        
+        // Формируем текст сообщения
+        const text = `
+📨 *Новое сообщение с сайта*
+
+👤 *Имя:* ${name}
+📧 *Email:* ${email}
+📱 *Телефон:* ${phone}
+
+💬 *Сообщение:*
+${message}
+        `.trim();
+
+        const url = `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`;
+
+        try {
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    chat_id: CHAT_ID,
+                    text: text,
+                    parse_mode: 'Markdown'
+                })
+            });
+
+            if (response.ok) {
+                formMessage.textContent = '✓ Сообщение успешно отправлено! Мы свяжемся с вами скоро.';
+                formMessage.className = 'form-message success';
+                formMessage.style.display = 'block';
+                document.getElementById('contact-form-element').reset();
+            } else {
+                throw new Error('Ошибка отправки');
+            }
+        } catch (error) {
+            formMessage.textContent = '✗ Ошибка при отправке. Попробуйте позже.';
+            formMessage.className = 'form-message error';
+            formMessage.style.display = 'block';
+        }
+
+        setTimeout(() => {
+            formMessage.style.display = 'none';
+        }, 5000);
+
         return false;
     }
 
